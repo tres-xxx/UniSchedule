@@ -183,7 +183,7 @@ def printSchedule(schedule):
 	else:
 		print "There is no any option for an schedule with the specified asignatures"
 
-loc = ("/home/userst/Downloads/horarios2019-2.xlsx") # Direction of the file
+loc = ("set the address of the file") # Direction of the file
 wb = xlrd.open_workbook(loc) # Open workbook
 sheet = wb.sheet_by_index(1) # this is the sheet with all the asignatures
 tableD = loadTable(sheet) # load table
