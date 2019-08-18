@@ -1,4 +1,6 @@
 import xlrd
+import os.path
+import sys
 
 ''' How the sheet is organizated
 0 - NRC
@@ -55,20 +57,41 @@ def uniqueNRC(possibleAs):
 		if different == True:
 			possibleNRC.append(possibleAs[i][0])
 	return possibleNRC	
-
-# Dummy menu for an asignature
-def menuSelectAsignature():
+	
+# Dummy menu for a menu
+def menuSelectSchedule():
 	print "Select an option:"
-	print "1. Add an alpha numeric"
-	print "0. Create schedule"
+	print "1. Create a new schedule (delete all previous choices)"
+	print "2. Modify a previous schedule"
+	print "3. Print schedule"
+	print "0. Close program"
+
+# Menu to modify asignatures
+def menuCRDAsignature():
+	print "Select an option:"
+	print "1. List all the asignatures"
+	print "2. Delete an assignature"
+	print "3. Add a new assignature"
+	print "0. Create schedule (close menu asignatures)"
+
+# Print all the name of the asignatures in a numeric list
+def printAllAsignatures(table):
+	if(len(table) == 0):
+		print "Empty list"
+	else:
+		print "List of asignatures"
+		for i in range(0,len(table)):
+			print (i+1,".",table[i][0][3].encode('utf-8'),"|",table[i][0][10].encode('utf-8'))
 
 # Dummy return option of an asignature
-def optionMenuAs(tableD):
-	menuSelectAsignature()
+def optionMenuAs(tableD,asignatures = []):
+	menuCRDAsignature()
 	sel = raw_input("Introduce an option: ")
 	asig = []
+	if(len(asignatures) != 0):
+		asig = asignatures
 	while(sel != "0"):
-		if(sel == "1"):
+		if(sel == "3"):
 			sel = raw_input("Introduce the alpha numeric: ")
 			possibleAs = loadSomething(tableD,sel,2)
 			sel = raw_input("Choose a time (0-Everything,1-Morning&Afternoon,3-Night) = ")
@@ -91,15 +114,29 @@ def optionMenuAs(tableD):
 			else:
 				asig.append(possibleAs)
 				print "Asignature added"
-		else:
+		elif(sel == "1"):
+			printAllAsignatures(asig)
+		elif(sel == "2"):
+			printAllAsignatures(asig)
+			if len(asig) != 0:
+				sel = raw_input("Introduce number of the asignature to delete: ")
+				if(int(sel) < 0 or int(sel) > len(asig)):
+					print "Does not exist an asignature with that number"
+				else: 
+					asig.pop(int(sel)-1)
+					print "Asignature has been deleted"
+		else: 
 			if(sel != "0"): 
 				print "No valid option"
-		menuSelectAsignature()
+		menuCRDAsignature()
 		sel = raw_input("Introduce an option: ")
 	return asig
 	
 # Create an schedule
 def createAllSchedule(allAsig):
+	if(len(allAsig) == 0):
+		print "There is no asignatures"
+		return []
 	nAsig = [] # Vector to select and order
 	nNRC = [] # Vector of NRC's
 	maxAsig = [] # Maximum of possibilities
@@ -170,21 +207,33 @@ def createAllSchedule(allAsig):
 			maxorder = maxorder + nAsig[i] # It has to be used when is a new cicle
 	return posScheduleNRC
 
-# Print all the possibilities
+# Print all the possibilities of the schedules
 def printSchedule(schedule):
 	if(len(schedule) > 0):
-		for k in range(0,len(possibleSchedule)):	
+		for k in range(0,len(schedule)):	
 			print "----------------------------------------------------------"
 			print "Option ", k+1
 			print "----------------------------------------------------------"
-			for i in range(0,len(possibleSchedule[k])):
-				for j in range(0,len(possibleSchedule[k][i])):
-					print possibleSchedule[k][i][j]
+			for i in range(0,len(schedule[k])):
+				for j in range(0,len(schedule[k][i])):
+					print schedule[k][i][j]
 	else:
 		print "There is no any option for an schedule with the specified asignatures"
+	print "----------------------------------------------------------"
+	print "----------------------------------------------------------"
+	
+# Create an schedule with 0 assignatures previously choosed
+def scratchSchedule(tableD):
+	allAsig = optionMenuAs(tableD)
+	possibleSchedule = createAllSchedule(allAsig)
+	printSchedule(possibleSchedule)
+	return allAsig	
 
-loc = ("set the address of the file") # Direction of the file
-wb = xlrd.open_workbook(loc) # Open workbook
+sel = raw_input("Introduce the direction of the file (example: /home/myname/Documents/doc.xlsx) = ") # direction of the file
+if os.path.isfile(sel):
+	wb = xlrd.open_workbook(sel) # Open workbook
+else:
+	sys.exit("No file has been found. The program is going to be closed it")
 sheet = wb.sheet_by_index(1) # this is the sheet with all the asignatures
 tableD = loadTable(sheet) # load table
 #program = loadSomething(tableD, "TGSC",9) # load all asignatures of with program = TGSC
@@ -192,17 +241,22 @@ tableD = loadTable(sheet) # load table
 #possibleNRC = uniqueNRC(possibleAs) # List of all the NRC with no repetition
 sel = "1"
 print "*************"
-print "Create an schedule for your time in Uniminuto University"
+print "Create an schedule for your schedule time in Uniminuto University"
 print "*************"
+asignatures = scratchSchedule(tableD)
 while(sel != "0"):
-	allAsig = optionMenuAs(tableD)
-	possibleNRC = uniqueNRC(allAsig[0]) # List of all the NRC with no repetition
-	possibleSchedule = createAllSchedule(allAsig)
-	printSchedule(possibleSchedule)
-	sel = raw_input("Do you want to create another schedule? (0 = No, 1 = Yes) = ")
-	if(sel == "0"):
-		print "Bye!"
-	else:
+	menuSelectSchedule()
+	sel = raw_input("Introduce an option: ")
+	if(sel == "1"):
 		print "*************"
 		print "Choose your options again"
 		print "*************"
+		asignatures = scratchSchedule(tableD)
+	elif(sel == "2"):
+		asignatures = optionMenuAs(tableD,asignatures)
+	elif(sel == "3"):
+		possibleSchedule = createAllSchedule(asignatures)
+		printSchedule(possibleSchedule)
+	else: 
+		print "Bye!"
+		break
